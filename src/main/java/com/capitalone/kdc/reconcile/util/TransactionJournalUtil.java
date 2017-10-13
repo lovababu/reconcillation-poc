@@ -17,9 +17,10 @@ import java.util.stream.Collectors;
  */
 public class TransactionJournalUtil {
     private static final String JOURNAL_PATH = "./transaction.log";
+    private static final String RECONCILE_LOG = "./reconcile.log";
 
     public static void journalEntry(Transaction tx) throws IOException {
-        if (createFileIfnotExist()) {
+        if (createFileIfnotExist(JOURNAL_PATH)) {
             System.out.println("File not exist, so created new one.");
         } else {
             System.out.println("File exist, so appending logs.");
@@ -35,14 +36,24 @@ public class TransactionJournalUtil {
                 .collect(Collectors.toList());
     }
 
+    public static void writeReconcileLog(String log) throws IOException {
+        if (createFileIfnotExist(RECONCILE_LOG)) {
+            System.out.println("File not exist, so created new one.");
+        } else {
+            System.out.println("File exist, so appending logs.");
+        }
+        Files.write(Paths.get(JOURNAL_PATH), log.getBytes(),
+                StandardOpenOption.APPEND);
+    }
+
     /**
      * Returns true if the file created now, else false.
      *
      * @return boolean
      * @throws IOException
      */
-    private static boolean createFileIfnotExist() throws IOException {
-        File file = Paths.get(JOURNAL_PATH).toFile();
+    private static boolean createFileIfnotExist(String path) throws IOException {
+        File file = Paths.get(path).toFile();
         if (!file.exists()) {
             return file.createNewFile();
         } else {

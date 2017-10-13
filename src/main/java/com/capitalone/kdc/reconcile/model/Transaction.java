@@ -105,5 +105,5 @@ public class Transaction {
         }
     }
 
-    public static Comparator<Transaction> sortByDate = Comparator.comparing(Transaction::getTimeStamp);
+    public static Comparator<Transaction> sortById = Comparator.comparing(Transaction::getId);
 }

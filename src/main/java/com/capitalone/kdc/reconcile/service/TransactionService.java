@@ -107,35 +107,32 @@ public class TransactionService {
     public void reconcillationOn(String acct) throws TransactionException, IOException {
         Account dAcct = validateAccount(acct);
         //get the journal entries for the acct.
-        dAcct.getTransactions().sort(Transaction.sortByDate);
+        dAcct.getTransactions().sort(Transaction.sortById);
         List<String> journalEntries = TransactionJournalUtil.readJournalEntries(acct);
         sortJournalEntries(journalEntries);
-
-        if (journalEntries.size() == dAcct.getTransactions().size()) {
-            boolean found;
-            for (String s : journalEntries) {
-                found = false;
-                for (Transaction t : dAcct.getTransactions()) {
-                    if (s.contains(t.getTimeStamp().toString()) && s.contains(t.getStatus())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
+        int jCount = journalEntries != null ? journalEntries.size() : 0;
+        int txCount = dAcct.getTransactions() != null ? dAcct.getTransactions().size() : 0;
+        int loop = jCount > txCount ? jCount : txCount;
+        if (journalEntries != null && dAcct.getTransactions() != null) {
+            for (int i = 0; i < loop; i++) {
+                String jEntry = journalEntries.get(i);
+                Transaction tx = dAcct.getTransactions().get(i);
+                if (!(jEntry.contains(tx.getTimeStamp().toString())
+                        && jEntry.contains(tx.getAmount().toString())
+                        && jEntry.contains(tx.getStatus()))) {
+                    TransactionJournalUtil.writeReconcileLog(jEntry);
                     throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
                 }
             }
             System.out.println("Account transactions exactly matched with Journal entries.");
-        } else {
-            throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
         }
     }
 
     private void sortJournalEntries(List<String> journalEntries) {
         journalEntries.sort((o1, o2) -> {
-            LocalDateTime o1Date = LocalDateTime.parse(o1.split(",")[1]);
-            LocalDateTime o2Date = LocalDateTime.parse(o2.split(",")[1]);
-            return o1Date.compareTo(o2Date);
+            String o1Id = o1.split(",")[0];
+            String o2Id = o2.split(",")[0];
+            return o1Id.compareTo(o2Id);
         });
     }
 
