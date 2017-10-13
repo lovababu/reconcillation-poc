@@ -2,10 +2,7 @@ package com.capitalone.kdc.reconcile.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by zry285 on 10/5/17.
@@ -20,7 +17,7 @@ public class Account {
     private LocalDateTime lastUpdatedOn;
 
     //Transaction history.
-    private Set<Transaction> transactions;
+    private List<Transaction> transactions;
 
     public String getId() {
         return id;
@@ -70,17 +67,17 @@ public class Account {
         this.lastUpdatedOn = lastUpdatedOn;
     }
 
-    public Set<Transaction> getTransactions() {
+    public List<Transaction> getTransactions() {
         return transactions;
     }
 
-    public void setTransactions(Set<Transaction> transactions) {
+    public void setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
     }
 
     public void addTransaction(Transaction txn) {
         if (transactions == null) {
-            transactions = new HashSet<>();
+            transactions = new ArrayList<>();
         }
         transactions.add(txn);
     }

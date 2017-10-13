@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 /**
  * Created by zry285 on 10/5/17.
@@ -21,21 +22,64 @@ public class ReconcileApp {
         System.out.println("Transactions   : 1");
         System.out.println("Statement      : 2");
         System.out.println("Reconciliation : 3");
-        System.out.println("Exit           : 4");
+        System.out.println("Auto Run       : 4");
+        System.out.println("Exit           : 5");
         while (true) {
             System.out.println("Enter your choice: ");
             int option = scanner.nextInt();
             if (option == 1) {
                 transactions();
             } else if (option == 2) {
-                statement();
+                statement(null);
             } else if (option == 3){
                 reconciliation();
             } else if (option == 4) {
+                autoRun();
+            }else if (option == 5) {
                 System.exit(0);
-            }else {
+            } else {
                 System.out.println("Invalid Option chosen.");
             }
+        }
+
+    }
+
+    private static void autoRun() {
+        System.out.print("Enter Account Num: (00001 - 00010) :");
+        String acct = scanner.next();
+        System.out.println("Number of transactions to run (includes CR and DR) ? : ");
+        int n = scanner.nextInt();
+        IntStream.rangeClosed(1,n).forEach(value -> {
+            try {
+                if (value %2 == 0) {
+                    boolean isSuccess = transactionService.credit(acct, BigDecimal.valueOf(value * 5L));
+                    if (isSuccess) {
+                        System.out.println("Credit Transaction " + value + " Success.");
+                    } else {
+                        System.out.println("Credit Transaction " + value + " Failed.");
+                    }
+                } else {
+                    boolean isSuccess = transactionService.draw(acct, BigDecimal.valueOf(value * 2L));
+                    if (isSuccess) {
+                        System.out.println("Credit Transaction " + value + " Success.");
+                    } else {
+                        System.out.println("Credit Transaction " + value + " Failed.");
+                    }
+                }
+            } catch (TransactionException | IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        System.out.println( n + " transactions made on Account " + acct + ", Account Statement is:");
+
+        statement(acct);
+
+        System.out.println(n + " transactions made on Account " + acct + ", Running reconcillation.");
+        try {
+            transactionService.reconcillationOn(acct);
+        } catch (TransactionException | IOException e) {
+            e.printStackTrace();
         }
 
     }
@@ -110,9 +154,11 @@ public class ReconcileApp {
         }
     }
 
-    private static void statement() {
-        System.out.print("Enter Account Num: (00001 - 00010) :");
-        String acct = scanner.next();
+    private static void statement(String acct) {
+        if (acct == null) {
+            System.out.print("Enter Account Num: (00001 - 00010) :");
+            acct = scanner.next();
+        }
 
         System.out.println();
 
@@ -123,8 +169,9 @@ public class ReconcileApp {
 
             if (account.getTransactions() != null && account.getTransactions().size()  > 0) {
                 account.getTransactions().forEach(tx ->
+                        //a3efb469-e56a-4122-812f-a802ceda66e3,00001,2.00,DR,2017-10-13T06:22:06.186,Completed
                         System.out.println(
-                                String.format("%s, %s, %.2f, %s", tx.getId(), tx.getTxnType(), tx.getAmount(), tx.getStatus())
+                                String.format("%s, %.2f, %s, %s, %s", tx.getId(), tx.getAmount(), tx.getTxnType(), tx.getTimeStamp(), tx.getStatus())
                         ));
             } else  {
                 System.out.println("No Transactions found.");

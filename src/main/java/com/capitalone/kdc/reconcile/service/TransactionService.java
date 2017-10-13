@@ -9,10 +9,7 @@ import com.capitalone.kdc.reconcile.util.TransactionJournalUtil;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by zry285 on 10/5/17.
@@ -62,27 +59,20 @@ public class TransactionService {
     }
 
     public boolean credit(String fromAcct, BigDecimal amount) throws TransactionException, IOException {
-        boolean isSuccess = false;
-        Account dAcct = validateAccount(fromAcct);
+        Account cAcct = validateAccount(fromAcct);
         LocalDateTime curr = LocalDateTime.now();
         Transaction txn = new Transaction();
         txn.setId(UUID.randomUUID().toString());
-        txn.setcAccountId(dAcct.getId());
+        txn.setcAccountId(cAcct.getId());
         txn.setAmount(amount);
         txn.setTxnType("CR");
         txn.setTimeStamp(curr);
-        if (dAcct.getBalance().compareTo(amount) == 1) {
-            dAcct.setBalance(dAcct.getBalance().subtract(amount));
-            dAcct.setLastUpdatedOn(curr);
-            txn.setStatus("Completed");
-            dAcct.addTransaction(txn);
-            isSuccess = true;
-        } else {
-            txn.setStatus("Failed");
-            txn.setError("In sufficient balance.");
-        }
+        cAcct.setBalance(cAcct.getBalance().add(amount));
+        cAcct.setLastUpdatedOn(curr);
+        txn.setStatus("Completed");
+        cAcct.addTransaction(txn);
         TransactionJournalUtil.journalEntry(txn);
-        return isSuccess;
+        return true;
     }
 
     public boolean transact(String fromAcct, String toAcct, BigDecimal amount) throws TransactionException, IOException {
@@ -117,27 +107,36 @@ public class TransactionService {
     public void reconcillationOn(String acct) throws TransactionException, IOException {
         Account dAcct = validateAccount(acct);
         //get the journal entries for the acct.
+        dAcct.getTransactions().sort(Transaction.sortByDate);
         List<String> journalEntries = TransactionJournalUtil.readJournalEntries(acct);
-        if (journalEntries != null && journalEntries.size() > 0) {
-            if (dAcct.getTransactions() != null && dAcct.getTransactions().size() > 0) {
-                journalEntries.forEach(s -> dAcct.getTransactions().forEach(transaction -> {
-                    if (s.contains(transaction.getTimeStamp().toString()) && s.contains(transaction.getStatus())) {
-                        System.out.println("Account transactions exactly matched with Journal entries.");
-                    } else {
-                        throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
-                    }
-                }));
-            } else {
-                throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
-            }
-        } else {
-            if (dAcct.getTransactions() != null && dAcct.getTransactions().size() > 0) {
-                throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
-            } else  {
-                System.out.println("No Entries found in journal, and zero transaction.");
-            }
-        }
+        sortJournalEntries(journalEntries);
 
+        if (journalEntries.size() == dAcct.getTransactions().size()) {
+            boolean found;
+            for (String s : journalEntries) {
+                found = false;
+                for (Transaction t : dAcct.getTransactions()) {
+                    if (s.contains(t.getTimeStamp().toString()) && s.contains(t.getStatus())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
+                }
+            }
+            System.out.println("Account transactions exactly matched with Journal entries.");
+        } else {
+            throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
+        }
+    }
+
+    private void sortJournalEntries(List<String> journalEntries) {
+        journalEntries.sort((o1, o2) -> {
+            LocalDateTime o1Date = LocalDateTime.parse(o1.split(",")[1]);
+            LocalDateTime o2Date = LocalDateTime.parse(o2.split(",")[1]);
+            return o1Date.compareTo(o2Date);
+        });
     }
 
     private Account validateAccount(String accountId) throws TransactionException {

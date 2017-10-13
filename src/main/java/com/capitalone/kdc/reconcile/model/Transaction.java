@@ -2,6 +2,7 @@ package com.capitalone.kdc.reconcile.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 
 /**
  * Created by zry285 on 10/5/17.
@@ -84,30 +85,25 @@ public class Transaction {
     public String log() {
         if ("TX".equalsIgnoreCase(this.getTxnType())) {
             if ("Completed".equalsIgnoreCase(this.getStatus())) {
-                return String.format("%s,%s,%s,%.2f,%s,%s,%s\n", this.getId(), this.getdAccountId(), this.getcAccountId(),
-                        this.getAmount(), this.getTxnType(), this.getTimeStamp().toString(), this.getStatus());
+                return String.format("%s,%s,%s,%s,%.2f,%s,%s\n", this.getId(), this.getTimeStamp().toString(),
+                        this.getdAccountId(), this.getcAccountId(), this.getAmount(), this.getTxnType(),  this.getStatus());
             } else {
-                return String.format("%s,%s,%s,%s,%s,%s\n", this.getId(), this.getdAccountId(), this.getcAccountId(),
-                        this.getTxnType(), this.getStatus(),
-                        this.getError());
+                return String.format("%s,%s,%s,%s,%.2f,%s,%s,%s\n", this.getId(), this.getTimeStamp().toString(),
+                        this.getdAccountId(), this.getcAccountId(), this.getAmount(), this.getTxnType(),  this.getStatus(), this.getError());
             }
-        } else if ("CR".equalsIgnoreCase(this.getTxnType())) {
-            if ("Completed".equalsIgnoreCase(this.getStatus())) {
-                return String.format("%s,%s,%.2f,%s,%s,%s\n", this.getId(), this.getcAccountId(),
-                        this.getAmount(), this.getTxnType(), this.getTimeStamp().toString(), this.getStatus());
-            } else {
-                return String.format("%s,%s,%s,%s,%s\n", this.getId(), this.getcAccountId(),
-                        this.getTxnType(), this.getStatus(), this.getError());
-            }
+
         } else {
             if ("Completed".equalsIgnoreCase(this.getStatus())) {
-                return String.format("%s,%s,%.2f,%s,%s,%s\n", this.getId(), this.getdAccountId(),
-                        this.getAmount(), this.getTxnType(), this.getTimeStamp().toString(), this.getStatus());
+                return String.format("%s,%s,%s,%.2f,%s,%s\n", this.getId(), this.getTimeStamp().toString(),
+                        this.getTxnType().equalsIgnoreCase("CR") ? this.getcAccountId() : this.getdAccountId(),
+                        this.getAmount(), this.getTxnType(), this.getStatus());
             } else {
-                return String.format("%s,%s,%s,%s,%s,%s\n", this.getId(), this.getdAccountId(), this.getTxnType(),
-                        this.getStatus());
-
+                return String.format("%s,%s,%s,%.2f,%s,%s,%s\n", this.getId(), this.getTimeStamp().toString(),
+                        this.getTxnType().equalsIgnoreCase("CR") ? this.getcAccountId() : this.getdAccountId(),
+                        this.getAmount(), this.getTxnType(), this.getStatus(), this.getError());
             }
         }
     }
+
+    public static Comparator<Transaction> sortByDate = Comparator.comparing(Transaction::getTimeStamp);
 }
