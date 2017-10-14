@@ -110,9 +110,9 @@ public class TransactionService {
     public void reconcillationOn(String acct) throws TransactionException, IOException {
         Account dAcct = validateAccount(acct);
         //get the journal entries for the acct.
-        dAcct.getTransactions().sort(Transaction.sortById);
         List<String> journalEntries = TransactionJournalUtil.readJournalEntries(acct);
         if (dAcct.getTransactions() != null && journalEntries != null) {
+            dAcct.getTransactions().sort(Transaction.sortById);
             sortJournalEntries(journalEntries);
             boolean missMatchFound = false;
             int jCount = journalEntries.size();
