@@ -20,11 +20,7 @@ public class TransactionJournalUtil {
     private static final String RECONCILE_LOG = "./reconcile.log";
 
     public static void journalEntry(Transaction tx) throws IOException {
-        if (createFileIfnotExist(JOURNAL_PATH)) {
-            System.out.println("File not exist, so created new one.");
-        } else {
-            System.out.println("File exist, so appending logs.");
-        }
+        createFileIfnotExist(JOURNAL_PATH);
         Files.write(Paths.get(JOURNAL_PATH), tx.log().getBytes(),
                 StandardOpenOption.APPEND);
     }
@@ -37,12 +33,8 @@ public class TransactionJournalUtil {
     }
 
     public static void writeReconcileLog(String log) throws IOException {
-        if (createFileIfnotExist(RECONCILE_LOG)) {
-            System.out.println("File not exist, so created new one.");
-        } else {
-            System.out.println("File exist, so appending logs.");
-        }
-        Files.write(Paths.get(JOURNAL_PATH), log.getBytes(),
+        createFileIfnotExist(RECONCILE_LOG);
+        Files.write(Paths.get(RECONCILE_LOG), log.getBytes(),
                 StandardOpenOption.APPEND);
     }
 

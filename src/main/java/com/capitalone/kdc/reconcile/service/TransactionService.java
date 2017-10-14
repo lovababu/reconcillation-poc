@@ -9,7 +9,10 @@ import com.capitalone.kdc.reconcile.util.TransactionJournalUtil;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by zry285 on 10/5/17.
@@ -109,22 +112,43 @@ public class TransactionService {
         //get the journal entries for the acct.
         dAcct.getTransactions().sort(Transaction.sortById);
         List<String> journalEntries = TransactionJournalUtil.readJournalEntries(acct);
-        sortJournalEntries(journalEntries);
-        int jCount = journalEntries != null ? journalEntries.size() : 0;
-        int txCount = dAcct.getTransactions() != null ? dAcct.getTransactions().size() : 0;
-        int loop = jCount > txCount ? jCount : txCount;
-        if (journalEntries != null && dAcct.getTransactions() != null) {
-            for (int i = 0; i < loop; i++) {
+        if (dAcct.getTransactions() != null && journalEntries != null) {
+            sortJournalEntries(journalEntries);
+            boolean missMatchFound = false;
+            int jCount = journalEntries.size();
+            int txCount = dAcct.getTransactions().size();
+
+            for (int i = 0; i < (jCount < txCount ? jCount : txCount); i++) {
                 String jEntry = journalEntries.get(i);
                 Transaction tx = dAcct.getTransactions().get(i);
+
                 if (!(jEntry.contains(tx.getTimeStamp().toString())
                         && jEntry.contains(tx.getAmount().toString())
                         && jEntry.contains(tx.getStatus()))) {
                     TransactionJournalUtil.writeReconcileLog(jEntry);
-                    throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
+                    missMatchFound = true;
                 }
             }
-            System.out.println("Account transactions exactly matched with Journal entries.");
+
+            if (jCount > txCount) {
+                for (int i = txCount; i < jCount; i++) {
+                    TransactionJournalUtil.writeReconcileLog(journalEntries.get(i));
+                }
+                missMatchFound = true;
+            }
+
+            if (txCount > jCount) {
+                for (int i = jCount; i < txCount; i++) {
+                    TransactionJournalUtil.writeReconcileLog(dAcct.getTransactions().get(i).log());
+                }
+                missMatchFound = true;
+            }
+
+            if (missMatchFound) {
+                throw new RuntimeException("There is miss match found in Account transaction and journal entries.");
+            } else {
+                System.out.println("Account transactions exactly matched with Journal entries.");
+            }
         }
     }
 
