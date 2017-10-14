@@ -34,7 +34,7 @@ public class TransactionJournalUtil {
 
     public static void writeReconcileLog(String log) throws IOException {
         createFileIfnotExist(RECONCILE_LOG);
-        Files.write(Paths.get(RECONCILE_LOG), log.getBytes(),
+        Files.write(Paths.get(RECONCILE_LOG + "\n"), log.getBytes(),
                 StandardOpenOption.APPEND);
     }
 
